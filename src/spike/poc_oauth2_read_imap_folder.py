@@ -1,3 +1,6 @@
+import os
+import pickle
+
 from google_auth_oauthlib.flow import InstalledAppFlow
 import requests
 from imaplib import IMAP4_SSL
@@ -6,16 +9,25 @@ from imaplib import IMAP4_SSL
 def google_authenticate():
     """
     Performs authentication and returns the credentials.
-    # create a Google app here https://console.developers.google.com
+    If credentials are saved, load them from the file.
+    Otherwise, perform the authentication and save the credentials.
     """
-    flow = InstalledAppFlow.from_client_secrets_file('../client_secret.json',
-                                                     scopes=[
-                                                         'https://www.googleapis.com/auth/userinfo.profile',
-                                                         'https://www.googleapis.com/auth/userinfo.email',
-                                                         'openid',
-                                                         'https://mail.google.com/'
-                                                     ])
-    return flow.run_local_server(port=0)
+    credentials_file = 'credentials.pkl'
+    if os.path.exists(credentials_file):
+        with open(credentials_file, 'rb') as file:
+            credentials = pickle.load(file)
+    else:
+        flow = InstalledAppFlow.from_client_secrets_file('../client_secret.json',
+                                                         scopes=[
+                                                             'https://www.googleapis.com/auth/userinfo.profile',
+                                                             'https://www.googleapis.com/auth/userinfo.email',
+                                                             'openid',
+                                                             'https://mail.google.com/'
+                                                         ])
+        credentials = flow.run_local_server(port=0)
+        with open(credentials_file, 'wb') as file:
+            pickle.dump(credentials, file)
+    return credentials
 
 
 def read_imap_folders(email, access_token):
